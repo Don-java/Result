@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Result Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        .result, .admin-panel {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            padding: 10px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableResult, #printableResult * {
+                visibility: visible;
+            }
+            #printableResult {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Check Your Result</h2>
+        <input type="text" id="studentID" placeholder="Enter Student ID" />
+        <button onclick="checkResult()">Check Result</button>
+        <button onclick="showAdminLogin()">Admin Login</button>
+        <p id="errorMessage" class="error">Student ID not found. Please try again.</p>
+
+        <div id="resultContainer" class="result">
+            <div id="printableResult">
+                <h3>Student Result</h3>
+                <p id="studentName"></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTable"></tbody>
+                </table>
+            </div>
+            <button onclick="printResult()">Print Result</button>
+        </div>
+    </div>
+
+    <div class="container admin-panel" id="adminPanel">
+        <h2>Admin Panel</h2>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password" />
+        <button onclick="adminLogin()">Login</button>
+        <p id="adminError" class="error">Incorrect Password</p>
+        <div id="adminData" style="display: none;">
+            <h3>Students Who Checked Results</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Student ID</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTable"></tbody>
+            </table>
+            <button onclick="printAdminData()">Print</button>
+        </div>
+    </div>
+
+    <script>
+        let checkedStudents = [];
+        const adminPassword = "admin123"; 
+
+        function getGrade(score) {
+            return score >= 10 ? 'Pass' : 'Fail';
+        }
+
+        function checkResult() {
+            var studentID = document.getElementById("studentID").value;
+            var errorMessage = document.getElementById("errorMessage");
+            var resultContainer = document.getElementById("resultContainer");
+            var resultTable = document.getElementById("resultTable");
+
+            var resultsDatabase = {
+                "T3U4V5": {name: "FSIMT/ND/COM/036", scores: {COM_123: 0, COM_124: 13}},
+                "W6X7Y8": {name: "FSIMT/ND/COM/042", scores: {COM_123: 17, COM_124: 3}},
+                "Z9A8B7": {name: "FSIMT/ND/COM/038", scores: {COM_123: 17, COM_124: 10}},
+                "P5Q4R3": {name: "FSIMT/ND/COM/040", scores: {COM_123: 19, COM_124: 18}},
+                "F6G7H8": {name: "FSIMT/ND/COM/045", scores: {COM_123: 16, COM_124: 6}},
+                "I9J1K2": {name: "FSIMT/ND/COM/073", scores: {COM_123: 16, COM_124: 7}},
+                "L3M4N5": {name: "FSIMT/ND/COM/049", scores: {COM_123: 10, COM_124: 12}},
+                "O6P7Q8": {name: "FSIMT/ND/COM/047", scores: {COM_123: 9, COM_124: 11}},
+                "R9S1T2": {name: "FSIMT/ND/COM/035", scores: {COM_123: 16, COM_124: 4}},
+                "U3V4W5": {name: "FSIMT/ND/COM/035", scores: {COM_123: 16, COM_124: 4}},
+                "X6Y7Z8": {name: "FSIMT/ND/COM/068", scores: {COM_123: 13, COM_124: 8}},
+                "A2B3C4": {name: "FSIMT/ND/COM/061", scores: {COM_123: 7, COM_124: 5}},
+                "Z3X1T7": {name: "FSIMT/ND/COM/062", scores: {COM_123: 14, COM_124: 13}},
+                "D5E6F7": {name: "FSIMT/ND/COM/050", scores: {COM_123: 12, COM_124: 5}},
+                "G8H9I1": {name: "FSIMT/ND/COM/055", scores: {COM_123: 5, COM_124: 6}},
+                "J2K3L4": {name: "FSIMT/ND/COM/052", scores: {COM_123: 14, COM_124: 6}},
+                "M5N6O7": {name: "FSIMT/ND/COM/041", scores: {COM_123: 6, COM_124: 3}},
+                "P8Q9R1": {name: "FSIMT/ND/COM/053", scores: {COM_123: 12, COM_124: 7}},
+                "S2T3U4": {name: "FSIMT/ND/COM/046", scores: {COM_123: 0, COM_124: 7}},
+                "V5W6X7": {name: "FSIMT/ND/COM/059", scores: {COM_123: 15, COM_124: 14}},
+                "Y8Z9A1": {name: "FSIMT/ND/COM/044", scores: {COM_123: 4, COM_124: 3}},
+                "B2C3D4": {name: "FSIMT/ND/COM/060", scores: {COM_123: 17, COM_124: 0}},
+                "E5F6G7": {name: "FSIMT/ND/COM/072", scores: {COM_123: 3, COM_124: 3}},
+                "H8I9J1": {name: "FSIMT/ND/COM/067", scores: {COM_123: 10, COM_124: 11}},
+                "K2L3M4": {name: "FSIMT/ND/COM/064", scores: {COM_123: 9, COM_124: 4}},
+                "N5O6P7": {name: "FSIMT/ND/COM/064", scores: {COM_123: 19, COM_124: 15}},
+                "Q8R9S1": {name: "FSIMT/ND/COM/070", scores: {COM_123: 19, COM_124: 16}}
+            };
+
+            if (resultsDatabase[studentID]) {
+                let student = resultsDatabase[studentID];
+                document.getElementById("studentName").innerText = "Name: " + student.name;
+                resultTable.innerHTML = "";
+                for (var course in student.scores) {
+                    var score = student.scores[course];
+                    var grade = getGrade(score);
+                    var row = `<tr><td>${course}</td><td>${score}</td><td>${grade}</td></tr>`;
+                    resultTable.innerHTML += row;
+                }
+                resultContainer.style.display = "block";
+                errorMessage.style.display = "none";
+                checkedStudents.push({name: student.name, id: studentID});
+            } else {
+                resultContainer.style.display = "none";
+                errorMessage.style.display = "block";
+            }
+        }
+
+        function showAdminLogin() {
+            document.getElementById("adminPanel").style.display = "block";
+        }
+
+        function adminLogin() {
+            var password = document.getElementById("adminPassword").value;
+            if (password === adminPassword) {
+                document.getElementById("adminError").style.display = "none";
+                document.getElementById("adminData").style.display = "block";
+                var adminTable = document.getElementById("adminTable");
+                adminTable.innerHTML = "";
+                checkedStudents.forEach(student => {
+                    var row = `<tr><td>${student.name}</td><td>${student.id}</td></tr>`;
+                    adminTable.innerHTML += row;
+                });
+            } else {
+                document.getElementById("adminError").style.display = "block";
+            }
+        }
+
+        function printResult() {
+            window.print();
+        }
+
+        function printAdminData() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
